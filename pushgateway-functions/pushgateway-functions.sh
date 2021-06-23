@@ -4,7 +4,7 @@
 umask 0077
 export LANG=C
 export LC_ALL=C
-pfver=1.0.0
+pfver=1.0.1
 pf_debug=0
 
 ## default vars
