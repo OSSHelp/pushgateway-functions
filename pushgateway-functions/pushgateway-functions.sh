@@ -4,7 +4,7 @@
 umask 0077
 export LANG=C
 export LC_ALL=C
-pfver=1.0.1
+pfver=1.0.2
 pf_debug=0
 
 ## default vars
@@ -88,8 +88,8 @@ function pushgateway_register_metric() {
 function pushgateway_set_value() {
   local err=0
   local validation_success=0
-  metric_value[$1]=${2}
-  metric_raw_labels[$1]="${*:3}"
+  local metric_value[$1]=${2}
+  local metric_raw_labels[$1]="${*:3}"
 
   # Validation
   metric_name_is_valid "${metric_name[$1]}" && \
