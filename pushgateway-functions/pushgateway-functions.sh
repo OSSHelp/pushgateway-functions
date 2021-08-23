@@ -4,7 +4,7 @@
 umask 0077
 export LANG=C
 export LC_ALL=C
-pfver=1.0.2
+pfver=1.0.3
 pf_debug=0
 
 ## default vars
@@ -88,6 +88,7 @@ function pushgateway_register_metric() {
 function pushgateway_set_value() {
   local err=0
   local validation_success=0
+  local help_presence=0
   local metric_value[$1]=${2}
   local metric_raw_labels[$1]="${*:3}"
 
@@ -109,11 +110,20 @@ function pushgateway_set_value() {
     test "${metric_raw_labels[*]}" == "none" -o -z "${metric_raw_labels[*]}" && \
       metric_formatted_labels=''
 
+test -f "${metrics_tmp_file}" && \
+  grep -q "^\# HELP ${metric_name[$1]}" "${metrics_tmp_file}" && \
+    help_presence=1
+
+test "${help_presence}" -eq 1 && \
+  sed -ri "/^#\sTYPE\s${metric_name[$1]}\s.*/a ${metric_name[$1]}${metric_formatted_labels} ${metric_value[$1]}" "${metrics_tmp_file}"
+
+test "${help_presence}" -eq 0 && {
 cat <<EOF >> "${metrics_tmp_file}"
 # HELP ${metric_name[$1]} ${metric_help[$1]}
 # TYPE ${metric_name[$1]} ${metric_type[$1]}
 ${metric_name[$1]}${metric_formatted_labels} ${metric_value[$1]}
 EOF
+}
 
     file_readable_nonempty "${metrics_tmp_file}" || {
       err=1
