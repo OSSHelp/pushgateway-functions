@@ -11,7 +11,7 @@ Library with functions for sending metrics to [Pushgateway](https://gitea.osshel
 Include it in your script:
 
 ``` shell
-pf_lib="/usr/local/include/osshelp/pushgateway/pushgateway-functions.sh"
+pf_lib="/usr/local/include/osshelp/pushgateway-functions.sh"
 
 test -r "${pf_lib}" || { echo "Library ${pf_lib} doesn't exist!"; exit 1; }
 test -r "${pf_lib}" && . "${pf_lib}" "${@}"

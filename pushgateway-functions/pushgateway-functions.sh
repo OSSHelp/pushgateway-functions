@@ -4,10 +4,10 @@
 umask 0077
 export LANG=C
 export LC_ALL=C
-pfver=1.0.4
-pf_debug=0
 
 ## default vars
+pfver=1.1.0
+pf_debug=0
 myhostname=$(hostname -f)
 curl=$(command -v curl)
 
@@ -110,14 +110,14 @@ function pushgateway_set_value() {
     test "${metric_raw_labels[*]}" == "none" -o -z "${metric_raw_labels[*]}" && \
       metric_formatted_labels=''
 
-test -f "${metrics_tmp_file}" && \
-  grep -q "^\# HELP ${metric_name[$1]}" "${metrics_tmp_file}" && \
-    help_presence=1
+    test -f "${metrics_tmp_file}" && \
+      grep -q "^\# HELP ${metric_name[$1]}" "${metrics_tmp_file}" && \
+        help_presence=1
 
-test "${help_presence}" -eq 1 && \
-  sed -ri "/^#\sTYPE\s${metric_name[$1]}\s.*/a ${metric_name[$1]}${metric_formatted_labels} ${metric_value[$1]}" "${metrics_tmp_file}"
+    test "${help_presence}" -eq 1 && \
+      sed -ri "/^#\sTYPE\s${metric_name[$1]}\s.*/a ${metric_name[$1]}${metric_formatted_labels} ${metric_value[$1]}" "${metrics_tmp_file}"
 
-test "${help_presence}" -eq 0 && {
+    test "${help_presence}" -eq 0 && {
 cat <<EOF >> "${metrics_tmp_file}"
 # HELP ${metric_name[$1]} ${metric_help[$1]}
 # TYPE ${metric_name[$1]} ${metric_type[$1]}
@@ -135,13 +135,18 @@ EOF
 
 function pushgateway_send_metrics() {
   local err=1
+  local grouping_keys=(${@})
+  local grouping_keys_formatted
+
+  # Formatting given keys from 'key1=value1 key2=value2' to '/key1/value1/key2/value2'
+  grouping_keys_formatted=$(sed -r 's/(\w+)(=)(\S+)(\s)?/\/\1\/\3/g' <<< "${grouping_keys[*]}")
 
   test -x "${curl}" || {
     show_error "Can't find curl binary!" "${FUNCNAME[0]}"
     return "${err}"
   }
 
-  http_code=$(curl -sq "${pushgateway_opts[@]}" --data-binary "@${metrics_tmp_file}" -o /dev/null -w "%{http_code}" "${pushgateway_url}")
+  http_code=$(curl -sq "${pushgateway_opts[@]}" --data-binary "@${metrics_tmp_file}" -o /dev/null -w "%{http_code}" "${pushgateway_url}${grouping_keys_formatted}")
   test "${http_code}" == "200" && \
     err=0
 
